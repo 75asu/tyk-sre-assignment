@@ -31,8 +31,10 @@ flowchart LR
     subgraph cluster["Kubernetes cluster"]
         pod["tool pod<br>SA + least-priv ClusterRole"]
         api[("kube-apiserver")]
+        prom(["Prometheus"])
         pod -->|"list Deployments"| api
         pod -->|"manage NetworkPolicies"| api
+        prom -.->|"scrape /metrics"| pod
     end
 
     hf -->|"helm install"| pod
