@@ -1,0 +1,57 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/75asu/tyk-sre-assignment
+  # tag defaults to Chart.appVersion; override with an immutable sha tag in real deploys.
+  tag: ""
+  # digest pins by content hash and wins over tag when set (strongest pin).
+  digest: ""
+  pullPolicy: IfNotPresent
+
+# Internal-only: this tool holds cluster RBAC, so never expose it publicly.
+service:
+  type: ClusterIP
+  port: 8080
+
+serviceAccount:
+  create: true
+  name: ""
+
+rbac:
+  create: true
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+# Pod-level hardening.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+# Container-level hardening.
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: http
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
