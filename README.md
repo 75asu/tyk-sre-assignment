@@ -4,6 +4,41 @@ An HTTP tool over the Kubernetes API for three SRE tasks: report unhealthy Deplo
 isolate a workload's network on demand, and check API-server reachability. All commands
 run through the `Makefile` (`make help`).
 
+## Architecture
+
+```mermaid
+flowchart LR
+    dev([Developer]) -->|"PR / merge"| ci
+
+    subgraph ci["CI (GitHub Actions)"]
+        direction TB
+        cc["Check Code"]
+        ch["Check Chart"]
+        pi["Publish Image"]
+        pc["Publish Chart"]
+    end
+
+    subgraph ghcr["GHCR (public)"]
+        img[("image")]
+        chart[("OCI chart")]
+    end
+
+    pi -->|push| img
+    pc -->|push| chart
+
+    hf["helmfile sync<br>(sample-deploy/)"] -->|"pull image + chart"| ghcr
+
+    subgraph cluster["Kubernetes cluster"]
+        pod["tool pod<br>SA + least-priv ClusterRole"]
+        api[("kube-apiserver")]
+        pod -->|"list Deployments"| api
+        pod -->|"manage NetworkPolicies"| api
+    end
+
+    hf -->|"helm install"| pod
+    op([operator]) -->|"HTTP: /healthz /readyz<br>/deployments/unhealthy<br>/network-policies/isolate"| pod
+```
+
 ## Endpoints
 
 | Method | Path | Purpose |
@@ -40,15 +75,20 @@ helmfile -f sample-deploy/helmfile.yaml sync
 
 ## Try it on kind
 
-`make e2e` runs the remote-pull deploy against a throwaway kind cluster, seeds the workloads,
-and exercises all three SRE features: `/readyz` (reachability), `/deployments/unhealthy`
-(flags only the broken one), and isolate/de-isolate (creates then removes NetworkPolicies).
+`make e2e` deploys against a throwaway kind cluster (pulling the chart + image from GHCR,
+exactly as a third party would), seeds the workloads, and runs `make demo`, which curls every
+endpoint and shows the tool creating then removing a NetworkPolicy.
 
 ```bash
-make e2e        # kind up -> pull chart+image from GHCR -> seed -> assert all 3 features
-make demo       # port-forward + curl the endpoints live
+make e2e        # kind up -> pull chart+image from GHCR -> seed -> demo (curl all endpoints)
+make demo       # curl the endpoints + show the isolate/de-isolate NetworkPolicies
 make kind-down  # clean up
 ```
+
+> Note on isolation: the tool's job is to create/remove the correct default-deny
+> NetworkPolicy on demand (the demo shows this). *Enforcing* it (dropping packets) is the
+> CNI's job , Calico/Cilium enforce NetworkPolicies, kind's default (kindnet) accepts but
+> does not. On a Calico/Cilium cluster this policy cuts traffic.
 
 ## CI
 
