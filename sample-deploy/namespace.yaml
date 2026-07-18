@@ -1,0 +1,5 @@
+# Namespace the demo workloads live in (separate from the tool's own namespace).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo

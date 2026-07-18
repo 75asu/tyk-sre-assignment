@@ -1,0 +1,29 @@
+name: Publish Chart
+
+# Package (no push) on PRs to validate; package + push the OCI chart to GHCR only on manual dispatch.
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish-chart:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v5
+
+      - name: Package chart
+        run: helm package helm/tyk-sre-assignment -d /tmp/chart
+
+      - name: Log in to GHCR and push
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+          helm push /tmp/chart/tyk-sre-assignment-*.tgz oci://ghcr.io/75asu/charts

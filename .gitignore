@@ -4,3 +4,6 @@ __pycache__
 
 golang/tyk-sre-assignment
 golang/bin/
+
+# local kind kubeconfig written by `make kind-up`
+.kube/

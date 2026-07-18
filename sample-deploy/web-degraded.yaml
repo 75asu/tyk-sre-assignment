@@ -1,0 +1,28 @@
+# Degraded Deployment: bad image tag -> ImagePullBackOff, never Ready -> the tool flags it.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-degraded
+  namespace: demo
+  labels:
+    app.kubernetes.io/name: web-degraded
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: web-degraded
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: web-degraded
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:this-tag-does-not-exist
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi

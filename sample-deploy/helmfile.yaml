@@ -1,0 +1,16 @@
+# The consumer's release descriptor: everything is pulled from remote registries, nothing local.
+# A third party with only this file (no chart checkout) runs `make deploy` and gets a working install.
+#   Chart: oci://ghcr.io/75asu/charts/tyk-sre-assignment  (published by the Publish Chart workflow)
+#   Image: ghcr.io/75asu/tyk-sre-assignment               (the chart's default; published by Build Image)
+repositories:
+  - name: tyk
+    url: ghcr.io/75asu/charts
+    oci: true
+
+releases:
+  - name: tyk-sre-assignment
+    namespace: tyk-sre
+    createNamespace: true
+    chart: tyk/tyk-sre-assignment
+    version: 0.1.0
+    wait: true
