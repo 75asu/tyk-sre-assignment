@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"time"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -18,6 +19,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	// Bound every API call so a hung API server can't hang a request (notably /readyz).
+	kConfig.Timeout = 10 * time.Second
 
 	clientset, err := kubernetes.NewForConfig(kConfig)
 	if err != nil {
