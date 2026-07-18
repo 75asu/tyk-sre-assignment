@@ -1,0 +1,8 @@
+# Keep the build context minimal; the image only needs ./golang.
+.git
+.github
+.kube
+golang/bin
+Makefile
+*.md
+LICENSE.md
