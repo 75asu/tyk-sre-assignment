@@ -23,6 +23,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/healthz", healthHandler)
 	mux.HandleFunc("/readyz", s.readyHandler)
 	mux.HandleFunc("/deployments/unhealthy", s.unhealthyDeploymentsHandler)
+	mux.HandleFunc("/network-policies/isolate", s.isolateHandler)
 	return mux
 }
 
