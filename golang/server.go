@@ -21,6 +21,7 @@ func NewServer(clientset kubernetes.Interface) *Server {
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", healthHandler)
+	mux.HandleFunc("/readyz", s.readyHandler)
 	mux.HandleFunc("/deployments/unhealthy", s.unhealthyDeploymentsHandler)
 	return mux
 }
