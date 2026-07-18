@@ -1,7 +1,10 @@
 name: Publish Image
 
-# Build (no push) on PRs to validate the Dockerfile; build + push to GHCR only on manual dispatch.
+# Build (no push) on PRs; build + push to GHCR on every push to main (per the assignment) and on v* tags.
 on:
+  push:
+    branches: [main]
+    tags: ["v*"]
   pull_request:
   workflow_dispatch:
 

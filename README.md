@@ -31,8 +31,10 @@ flowchart LR
     subgraph cluster["Kubernetes cluster"]
         pod["tool pod<br>SA + least-priv ClusterRole"]
         api[("kube-apiserver")]
+        prom(["Prometheus"])
         pod -->|"list Deployments"| api
         pod -->|"manage NetworkPolicies"| api
+        prom -.->|"scrape /metrics"| pod
     end
 
     hf -->|"helm install"| pod
@@ -47,6 +49,10 @@ flowchart LR
 | GET | `/readyz` | Readiness: live API-server probe; `503` when unreachable. |
 | GET | `/deployments/unhealthy` | Deployments whose ready pods != desired. Optional `?namespace=`. |
 | POST / DELETE | `/network-policies/isolate` | Apply / remove a default-deny NetworkPolicy for a workload. |
+| GET | `/metrics` | Prometheus metrics (RED: request count + latency by route). |
+
+Observability: RED metrics on `/metrics` (the chart adds `prometheus.io/scrape` annotations) and
+structured JSON logs (`slog`) for lifecycle + errors , per-request telemetry lives in metrics, not logs.
 
 ## Develop
 
