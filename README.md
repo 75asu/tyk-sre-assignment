@@ -7,38 +7,36 @@ run through the `Makefile` (`make help`).
 ## Architecture
 
 ```mermaid
-flowchart LR
-    dev([Developer]) -->|"PR / merge"| ci
+%%{init: {'flowchart': {'curve': 'basis'}}}%%
+flowchart TB
+    dev([Developer]) -->|PR / merge| ci
 
-    subgraph ci["CI (GitHub Actions)"]
-        direction TB
-        cc["Check Code"]
-        ch["Check Chart"]
-        pi["Publish Image"]
-        pc["Publish Chart"]
+    subgraph ci["CI · GitHub Actions"]
+        direction LR
+        cc[Check Code]
+        ch[Check Chart]
+        pi[Publish Image]
+        pc[Publish Chart]
     end
 
-    subgraph ghcr["GHCR (public)"]
-        img[("image")]
-        chart[("OCI chart")]
+    ci ==>|push image + chart| ghcr
+
+    subgraph ghcr["GHCR · public"]
+        direction LR
+        img[(image)]
+        chart[(OCI chart)]
     end
 
-    pi -->|push| img
-    pc -->|push| chart
-
-    hf["helmfile sync<br>(sample-deploy/)"] -->|"pull image + chart"| ghcr
+    ghcr ==>|pull| hf[helmfile sync]
 
     subgraph cluster["Kubernetes cluster"]
-        pod["tool pod<br>SA + least-priv ClusterRole"]
-        api[("kube-apiserver")]
-        prom(["Prometheus"])
-        pod -->|"list Deployments"| api
-        pod -->|"manage NetworkPolicies"| api
-        prom -.->|"scrape /metrics"| pod
+        direction LR
+        prom([Prometheus]) -.->|scrape /metrics| pod["tool pod<br/>least-priv ClusterRole"]
+        pod -->|read Deployments<br/>manage NetworkPolicies| api[(kube-apiserver)]
     end
 
-    hf -->|"helm install"| pod
-    op([operator]) -->|"HTTP: /healthz /readyz<br>/deployments/unhealthy<br>/network-policies/isolate"| pod
+    hf ==>|helm install| pod
+    op([operator]) -.->|HTTP API| pod
 ```
 
 ## Endpoints
