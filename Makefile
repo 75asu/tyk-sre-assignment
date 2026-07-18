@@ -12,7 +12,7 @@ KIND_KUBECONFIG := $(CURDIR)/.kube/kind.kubeconfig
 
 .DEFAULT_GOAL := help
 .PHONY: help fmt fmt-check vet test build image helm-lint helm-template \
-        kind-up kind-down kind-load deploy undeploy demo
+        kind-up kind-down kind-load deploy undeploy seed demo
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
@@ -65,6 +65,9 @@ deploy: kind-load ## Install/upgrade the chart into kind using the local image
 		--namespace $(NAMESPACE) --create-namespace \
 		--set image.repository=$(IMAGE) --set image.tag=local --set image.pullPolicy=Never \
 		--wait
+
+seed: ## Apply example workloads (a healthy + a degraded Deployment) to exercise the tool
+	kubectl --kubeconfig "$(KIND_KUBECONFIG)" apply -f examples/sample-workloads.yaml
 
 undeploy: ## Uninstall the chart
 	helm uninstall $(RELEASE) --kubeconfig "$(KIND_KUBECONFIG)" --namespace $(NAMESPACE)
