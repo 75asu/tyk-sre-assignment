@@ -36,7 +36,7 @@ flowchart TB
     end
 
     hf ==>|helm install| pod
-    op([operator]) -.->|HTTP API| pod
+    sre([SRE]) -.->|HTTP requests| pod
 ```
 
 ## Endpoints
