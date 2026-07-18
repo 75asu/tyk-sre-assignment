@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"k8s.io/client-go/kubernetes"
 )
@@ -27,10 +29,34 @@ func (s *Server) Handler() http.Handler {
 	return mux
 }
 
-// Start binds the listen address and serves until terminated or error.
-func (s *Server) Start(listenAddr string) error {
-	fmt.Printf("Server listening on %s\n", listenAddr)
-	return http.ListenAndServe(listenAddr, s.Handler())
+// Start serves until ctx is cancelled (e.g. SIGTERM), then drains in-flight requests (graceful shutdown).
+func (s *Server) Start(ctx context.Context, listenAddr string) error {
+	srv := &http.Server{
+		Addr:              listenAddr,
+		Handler:           s.Handler(),
+		ReadHeaderTimeout: 5 * time.Second,  // slow-loris protection
+		ReadTimeout:       15 * time.Second, // whole-request read bound
+		WriteTimeout:      15 * time.Second, // handler + response write bound
+		IdleTimeout:       60 * time.Second, // keep-alive reaping
+	}
+
+	errCh := make(chan error, 1)
+	go func() {
+		fmt.Printf("Server listening on %s\n", listenAddr)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			errCh <- err
+		}
+	}()
+
+	select {
+	case err := <-errCh:
+		return err
+	case <-ctx.Done():
+		fmt.Println("shutdown signal received, draining connections...")
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		return srv.Shutdown(shutdownCtx)
+	}
 }
 
 // healthHandler is the process liveness check (does not touch Kubernetes).

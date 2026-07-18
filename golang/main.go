@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"k8s.io/client-go/kubernetes"
@@ -14,6 +17,10 @@ func main() {
 	listenAddr := flag.String("address", ":8080", "HTTP server listen address")
 
 	flag.Parse()
+
+	// Cancel on SIGINT/SIGTERM so the server drains gracefully on pod termination.
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
 	kConfig, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
@@ -35,7 +42,7 @@ func main() {
 
 	fmt.Printf("Connected to Kubernetes %s\n", version)
 
-	if err := NewServer(clientset).Start(*listenAddr); err != nil {
+	if err := NewServer(clientset).Start(ctx, *listenAddr); err != nil {
 		panic(err)
 	}
 }
