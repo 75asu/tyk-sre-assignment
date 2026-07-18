@@ -1,4 +1,4 @@
-name: CI
+name: Check Code
 
 on:
   push:
@@ -9,26 +9,27 @@ permissions:
   contents: read
 
 jobs:
-  check:
-    name: check
+  check-code:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - name: Check out
+        uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v7
+      - name: Set up Go
+        uses: actions/setup-go@v7
         with:
           go-version-file: golang/go.mod
           cache-dependency-path: golang/go.sum
 
       # One step per gate via its Makefile target, so a failure pinpoints the gate.
-      - name: format
+      - name: Format
         run: make fmt-check
 
-      - name: vet
+      - name: Vet
         run: make vet
 
-      - name: build
+      - name: Build
         run: make build
 
-      - name: test
+      - name: Test
         run: make test
