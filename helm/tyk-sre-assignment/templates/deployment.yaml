@@ -13,6 +13,10 @@ spec:
     metadata:
       labels:
         {{- include "tyk-sre-assignment.selectorLabels" . | nindent 8 }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ .Values.service.port | quote }}
+        prometheus.io/path: "/metrics"
     spec:
       serviceAccountName: {{ include "tyk-sre-assignment.serviceAccountName" . }}
       securityContext:

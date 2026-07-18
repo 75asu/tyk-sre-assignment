@@ -47,6 +47,10 @@ flowchart LR
 | GET | `/readyz` | Readiness: live API-server probe; `503` when unreachable. |
 | GET | `/deployments/unhealthy` | Deployments whose ready pods != desired. Optional `?namespace=`. |
 | POST / DELETE | `/network-policies/isolate` | Apply / remove a default-deny NetworkPolicy for a workload. |
+| GET | `/metrics` | Prometheus metrics (RED: request count + latency by route). |
+
+Observability: RED metrics on `/metrics` (the chart adds `prometheus.io/scrape` annotations) and
+structured JSON logs (`slog`) for lifecycle + errors , per-request telemetry lives in metrics, not logs.
 
 ## Develop
 

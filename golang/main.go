@@ -3,7 +3,8 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
+	"log/slog"
+	"os"
 	"os/signal"
 	"syscall"
 	"time"
@@ -18,13 +19,16 @@ func main() {
 
 	flag.Parse()
 
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+
 	// Cancel on SIGINT/SIGTERM so the server drains gracefully on pod termination.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	kConfig, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
-		panic(err)
+		slog.Error("building kubernetes config", "error", err)
+		os.Exit(1)
 	}
 
 	// Bound every API call so a hung API server can't hang a request (notably /readyz).
@@ -32,18 +36,21 @@ func main() {
 
 	clientset, err := kubernetes.NewForConfig(kConfig)
 	if err != nil {
-		panic(err)
+		slog.Error("creating kubernetes client", "error", err)
+		os.Exit(1)
 	}
 
 	version, err := getKubernetesVersion(clientset)
 	if err != nil {
-		panic(err)
+		slog.Error("connecting to kubernetes API server", "error", err)
+		os.Exit(1)
 	}
 
-	fmt.Printf("Connected to Kubernetes %s\n", version)
+	slog.Info("connected to kubernetes", "version", version)
 
 	if err := NewServer(clientset).Start(ctx, *listenAddr); err != nil {
-		panic(err)
+		slog.Error("server error", "error", err)
+		os.Exit(1)
 	}
 }
 
