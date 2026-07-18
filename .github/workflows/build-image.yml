@@ -1,9 +1,8 @@
 name: Build Image
 
+# Dev throttle: build-only on PRs, push only on manual dispatch (conserve GHCR). Final: revert to push on main/tags.
 on:
-  push:
-    branches: [main]
-    tags: ["v*"]
+  workflow_dispatch:
   pull_request:
 
 permissions:
